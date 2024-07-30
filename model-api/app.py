@@ -1,5 +1,3 @@
-
-import os
 from fastapi import Request, FastAPI
 from fastapi.logger import logger
 from huggingface_hub import hf_hub_download
@@ -8,6 +6,7 @@ from llama_cpp import Llama
 
 app = FastAPI()
 
+# load LLM model on application startup
 @app.on_event("startup")
 def startup():
     logger.info('Application start up')
@@ -15,12 +14,11 @@ def startup():
         file_path = hf_hub_download(repo_id="TheBloke/Llama-2-13B-GGUF", filename="llama-2-13b.Q2_K.gguf")
 
         app.llm = Llama(
-            model_path=file_path,
-            # n_gpu_layers=-1, # Uncomment to use GPU acceleration
-            # seed=1337, # Uncomment to set a specific seed
-            # n_ctx=2048, # Uncomment to increase the context window
+           model_path=file_path,
+            n_gpu_layers=-1, # Uncomment to use GPU acceleration
+            seed=1337, # Uncomment to set a specific seed
+            n_ctx=2048, # Uncomment to increase the context window
         )
-        print("Model loaded")
 
     except Exception as e:
         print(e)
@@ -33,7 +31,6 @@ def read_root():
 def health():
     return {}
 
-
 @app.post("/predict")
 async def get_body(request: Request):
 
@@ -43,16 +40,17 @@ async def get_body(request: Request):
     if type(request) is dict:
         request = request['data']
 
-    print (request)
     model_input = request
 
-
-    output = app.llm(
-            model_input, # Prompt
-            max_tokens=20, # Generate up to 32 tokens, set to None to generate up to the end of the context window
-            stop=["Q:", "\n"], # Stop generating just before the model would generate a new question
-            echo=True # Echo the prompt back in the output
-        ) # Generate a completion, can also call create_completion
+    try:
+        output = app.llm(
+                model_input, # Prompt
+                max_tokens=20, # Generate up to 20 tokens, set to None to generate up to the end of the context window
+                stop=["Q:", "\n"], # Stop generating just before the model would generate a new question
+                echo=True # Echo the prompt back in the output
+            )
+    except Exception as e:
+        output = "Error! Unable to get prediction."
     
     return {"predictions": output }
 
