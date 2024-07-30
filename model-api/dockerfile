@@ -7,9 +7,11 @@ WORKDIR /app
 # Make model directory
 RUN mkdir models
 
+# Install C++ compiler necessary for instaling llm library
 RUN apt update
 RUN apt install build-essential -y
 RUN apt install gcc-11 g++-11 -y
+
 # Copy the requirements file to the working directory
 COPY requirements.txt .
 
